@@ -1,0 +1,55 @@
+{
+  "name": "discord-github",
+  "version": "1.0.0",
+  "description": "A Discord bot that integrates with GitHub",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "watch": "tsc --watch",
+    "deploy-commands": "tsx src/deploy-commands.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint:check": "eslint src/**/*.ts --max-warnings 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bogdanws/discord-github.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "github",
+    "integration",
+    "webhooks"
+  ],
+  "author": "Bogdan Andreiana <bogdanandreiana13@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bogdanws/discord-github/issues"
+  },
+  "homepage": "https://github.com/bogdanws/discord-github#readme",
+  "dependencies": {
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.0",
+    "octokit": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "@octokit/types": "^14.1.0",
+    "@octokit/webhooks-types": "^7.6.1",
+    "@types/node": "^24.0.15",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "eslint": "^9.31.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}
