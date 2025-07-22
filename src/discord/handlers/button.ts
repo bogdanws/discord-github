@@ -1,5 +1,5 @@
 import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
-import { hasAdminPermissions } from './utils.js';
+import { hasAdminPermissions } from '../../utils/index.js';
 
 // handle button interactions
 export async function handleButtonInteraction(interaction: ButtonInteraction): Promise<void> {

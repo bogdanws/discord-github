@@ -3,9 +3,9 @@
 // - commit notifications with embed messages
 // - revert button for each commit (admin only)
 // - github api integration for commit operations
+import { PushEvent } from '@octokit/webhooks-types';
 import { TextChannel, EmbedBuilder, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Octokit } from 'octokit';
-import { PushEvent } from '@octokit/webhooks-types';
 
 // initialize github client
 const octokit = new Octokit({

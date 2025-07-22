@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ChatInputCommandInteraction } from 'discord.js';
 
-import { handleRevertCommit } from '../github-handler.js';
-import { hasAdminPermissions } from '../utils.js';
+import { handleRevertCommit } from '../../../github/handler.js';
+import { hasAdminPermissions } from '../../../utils/index.js';
 
 export default {
 	data: new SlashCommandBuilder()

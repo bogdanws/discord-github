@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
-import { testCommitNotification } from '../github-handler.js';
-import { hasAdminPermissions } from '../utils.js';
+import { testCommitNotification } from '../../../github/handler.js';
+import { hasAdminPermissions } from '../../../utils/index.js';
 
 export default {
 	data: new SlashCommandBuilder()

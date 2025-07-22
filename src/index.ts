@@ -4,9 +4,8 @@ import dotenv from 'dotenv';
 import { readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { hasAdminPermissions } from './utils.js';
-import { handleButtonInteraction } from './button-handlers.js';
-import { handleModalSubmit } from './modal-handlers.js';
+import { handleButtonInteraction } from './discord/handlers/button.js';
+import { handleModalSubmit } from './discord/handlers/modal.js';
 
 // extend the Client type to include commands and custom properties
 declare module 'discord.js' {

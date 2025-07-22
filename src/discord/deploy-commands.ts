@@ -1,7 +1,8 @@
-import { REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 
 // load environment variables
@@ -11,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const commands = [];
-const commandsPath = join(__dirname, 'commands');
+const commandsPath = join(__dirname, 'handlers/commands');
 const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 
 // grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
@@ -37,9 +38,9 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
 		const data = await rest.put(
 			Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID!, process.env.DISCORD_GUILD_ID!),
 			{ body: commands },
-		);
+		) as any[];
 
-		console.log(`Successfully reloaded ${(data as any[]).length} application (/) commands.`);
+		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
 	} catch (error) {
 		// and of course, make sure you catch and log any errors!
 		console.error(error);
