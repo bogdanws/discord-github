@@ -46,18 +46,19 @@ Create a `.env` file in your project root with the following variables:
 
 ```env
 # Discord Bot Configuration
-DISCORD_TOKEN=your_discord_bot_token_here
-DISCORD_CLIENT_ID=your_discord_client_id_here
-DISCORD_GUILD_ID=your_discord_server_id_here
+DISCORD_TOKEN=                # discord bot token from the developer portal
+DISCORD_CLIENT_ID=            # discord application client id
+DISCORD_GUILD_ID=             # discord server (guild) id where the bot will operate
 
 # GitHub App Configuration
-GITHUB_APP_ID=
-GITHUB_PRIVATE_KEY=
-GITHUB_WEBHOOK_SECRET=
-WEBHOOK_DOMAIN=your-server-ip:3000
+GITHUB_APP_ID=                # github app id from your github app settings
+GITHUB_PRIVATE_KEY=           # github app private key (entire .pem contents, use literal newlines or wrap in double quotes)
+GITHUB_WEBHOOK_SECRET=        # github webhook secret for verifying webhook payloads
+WEBHOOK_DOMAIN=               # public url (without http://) where your bot is running (do not include port)
+WEBHOOK_PORT=3000             # port where your bot is running
 
 # Bot Configuration
-ADMIN_ROLE_ID=your_admin_role_id_here
+ADMIN_ROLE_ID=                # (optional) discord role id for admin commands
 ```
 
 ### Creating the GitHub App
@@ -67,7 +68,7 @@ ADMIN_ROLE_ID=your_admin_role_id_here
 3.  Fill in the following details:
     *   **App name**: A descriptive name for your app (e.g., "Discord Commit Notifier").
     *   **Homepage URL**: Your bot's website or a placeholder (e.g., `https://discord.com`).
-    *   **Webhook URL**: The URL where your bot will receive webhooks. This should be `http://your-server-ip:3000/webhooks`.
+    *   **Webhook URL**: The URL where your bot will receive webhooks. This should be `http://WEBHOOK_DOMAIN:WEBHOOK_PORT/webhooks` (replace `WEBHOOK_DOMAIN` and `WEBHOOK_PORT` with your actual `WEBHOOK_DOMAIN` and `WEBHOOK_PORT`).
     *   **Webhook secret**: A strong, random string to secure your webhooks.
 4.  Under **Repository permissions**, grant the following permissions:
     *   **Contents**: Read & write
@@ -79,15 +80,6 @@ ADMIN_ROLE_ID=your_admin_role_id_here
 7.  On the app's page, generate a new private key and open the `.pem` file in a text editor. Copy the entire contents and paste it into your `.env` file as the value for `GITHUB_PRIVATE_KEY` (use literal newlines or wrap in double quotes if needed).
 8.  Install the app on the repositories you want to monitor.
 
-### Additional Environment Variables
-
-After creating your GitHub App, add the `WEBHOOK_DOMAIN` environment variable to your `.env` file:
-
-```env
-WEBHOOK_DOMAIN=your-server-ip:3000
-```
-
-This should be the public URL where your bot is running (without `http://`). For local development, you can use `localhost:3000`, but for production you'll need your server's public IP or domain.
 
 ## Step 4: Install Dependencies
 

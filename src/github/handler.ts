@@ -62,7 +62,7 @@ export async function createWebhook(repoFullName: string) {
     active: true,
     events: ['push'],
     config: {
-      url: `http://${process.env.WEBHOOK_DOMAIN}/webhooks`,
+      url: `http://${process.env.WEBHOOK_DOMAIN}:${process.env.WEBHOOK_PORT}/webhooks`,
       content_type: 'json',
       secret: process.env.GITHUB_WEBHOOK_SECRET!,
     },
