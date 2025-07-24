@@ -59,6 +59,12 @@ function initializeWebhooks() {
       await sendCommitNotification(channel, payload as PushEvent);
     });
 
+    // handle ping event from github to acknowledge webhook setup
+    webhooks.on('ping', async ({ id, name, payload }) => {
+      console.log('received ping event from github:', payload.zen);
+      // nothing else needed; middleware will respond with 200 OK
+    });
+
     webhooks.onError((error) => {
       console.error('Error in webhooks handler:', error);
     });
