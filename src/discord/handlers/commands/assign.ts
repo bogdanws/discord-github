@@ -27,7 +27,7 @@ export default {
     const channelName = interaction.options.getString('channel', true);
 
     try {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply();
 
       let channel = interaction.guild.channels.cache.find(
         ch => ch.name === channelName && ch.type === ChannelType.GuildText
