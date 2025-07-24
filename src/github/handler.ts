@@ -5,11 +5,7 @@
 // - github api integration for commit operations
 import { PushEvent } from '@octokit/webhooks-types';
 import { TextChannel, EmbedBuilder, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle, Client } from 'discord.js';
-import { Octokit } from 'octokit';
-
-import { getChannelForRepository } from '../db/database.js';
 import { App } from 'octokit';
-import fs from 'fs';
 
 // github app instance (initialized lazily)
 let app: App | null = null;
@@ -68,6 +64,23 @@ export async function createWebhook(repoFullName: string) {
     },
   });
 }
+
+export async function deleteWebhook(repoFullName: string): Promise<boolean> {
+  try {
+    const [owner, repo] = repoFullName.split('/');
+    const octokitInstance = await getOctokit(repoFullName);
+    // list all webhooks for the repo
+    const hooks = await octokitInstance.rest.repos.listWebhooks({ owner, repo });
+    const targetUrl = `http://${process.env.WEBHOOK_DOMAIN}:${process.env.WEBHOOK_PORT}/webhooks`;
+    const hook = hooks.data.find(h => h.config && h.config.url === targetUrl);
+    if (!hook) return false;
+    await octokitInstance.rest.repos.deleteWebhook({ owner, repo, hook_id: hook.id });
+    return true;
+  } catch (e) {
+    console.error('❌ Error deleting webhook:', e);
+    return false;
+  }
+} 
 
 // send commit notification to discord channel
 export async function sendCommitNotification(
@@ -158,18 +171,41 @@ export async function getRepositoryInfo(repoFullName: string) {
 }
 
 // test function to simulate commit notification
-export async function testCommitNotification(channel: TextChannel): Promise<void> {
-  const testEvent = {
-    ref: 'refs/heads/main',
-    before: 'abc123',
-    after: 'def456',
-    repository: {
-      name: 'test-repo',
-      full_name: 'testuser/test-repo',
-      html_url: 'https://github.com/testuser/test-repo'
-    },
-    commits: [
-      {
+export async function testCommitNotification(channel?: TextChannel): Promise<'ok' | 'no_channel' | 'invalid_channel' | 'error'> {
+  try {
+    let targetChannel = channel;
+    if (!targetChannel) {
+      const { getChannelForRepository } = await import('../db/database.js');
+      const { client } = await import('../index.js');
+      const channelId = await getChannelForRepository('testuser/test-repo');
+      if (!channelId) return 'no_channel';
+      const fetchedChannel = await client.channels.fetch(channelId);
+      if (!fetchedChannel || fetchedChannel.type !== 0) return 'invalid_channel'; // 0 = GuildText
+      targetChannel = fetchedChannel;
+    }
+
+    const testEvent = {
+      ref: 'refs/heads/main',
+      before: 'abc123',
+      after: 'def456',
+      repository: {
+        name: 'test-repo',
+        full_name: 'testuser/test-repo',
+        html_url: 'https://github.com/testuser/test-repo'
+      },
+      commits: [
+        {
+          id: 'def456789',
+          message: 'test: add sample commit for testing',
+          author: {
+            name: 'Test User',
+            email: 'test@example.com'
+          },
+          url: 'https://github.com/testuser/test-repo/commit/def456789',
+          timestamp: new Date().toISOString()
+        }
+      ],
+      head_commit: {
         id: 'def456789',
         message: 'test: add sample commit for testing',
         author: {
@@ -178,25 +214,18 @@ export async function testCommitNotification(channel: TextChannel): Promise<void
         },
         url: 'https://github.com/testuser/test-repo/commit/def456789',
         timestamp: new Date().toISOString()
-      }
-    ],
-    head_commit: {
-      id: 'def456789',
-      message: 'test: add sample commit for testing',
-      author: {
+      },
+      pusher: {
         name: 'Test User',
         email: 'test@example.com'
-      },
-      url: 'https://github.com/testuser/test-repo/commit/def456789',
-      timestamp: new Date().toISOString()
-    },
-    pusher: {
-      name: 'Test User',
-      email: 'test@example.com'
-    }
-  };
+      }
+    };
 
-  await sendCommitNotification(channel, testEvent as PushEvent);
+    await sendCommitNotification(targetChannel, testEvent as PushEvent);
+    return 'ok';
+  } catch (e) {
+    return 'error';
+  }
 }
 
 // handle revert button interaction
@@ -276,4 +305,4 @@ export async function handleRevertCommit(
       message: `❌ Failed to revert commit: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
-} 
+}

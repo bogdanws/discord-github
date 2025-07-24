@@ -29,6 +29,10 @@ export async function assignRepository(repository: string, channelId: string): P
   );
 }
 
+export async function unassignRepository(repository: string): Promise<void> {
+  await db.run('DELETE FROM repository_channels WHERE repository = ?', repository);
+}
+
 export async function getChannelForRepository(repository: string): Promise<string | undefined> {
   const row = await db.get('SELECT channel_id FROM repository_channels WHERE repository = ?', repository);
   return row?.channel_id;

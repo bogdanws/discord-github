@@ -38,11 +38,28 @@ export default {
 				ephemeral: true
 			});
 			try {
-				await testCommitNotification(interaction.channel as TextChannel);
-				await interaction.followUp({
-					content: '✅ Test commit notification sent successfully! Make sure you have assigned `testuser/test-repo` to a channel.',
-					ephemeral: true
-				});
+				const result = await testCommitNotification();
+				if (result === 'no_channel') {
+					await interaction.followUp({
+						content: '❌ No channel assigned to `testuser/test-repo`. Please assign a channel first.',
+						ephemeral: true
+					});
+				} else if (result === 'invalid_channel') {
+					await interaction.followUp({
+						content: '❌ The assigned channel for `testuser/test-repo` is invalid or not a text channel.',
+						ephemeral: true
+					});
+				} else if (result === 'ok') {
+					await interaction.followUp({
+						content: '✅ Test commit notification sent successfully! Make sure you have assigned `testuser/test-repo` to a channel.',
+						ephemeral: true
+					});
+				} else {
+					await interaction.followUp({
+						content: '❌ Failed to send test commit notification.',
+						ephemeral: true
+					});
+				}
 			} catch (error) {
 				console.error('❌ Error testing commit notification:', error);
 				await interaction.followUp({

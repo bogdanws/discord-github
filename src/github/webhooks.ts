@@ -1,7 +1,7 @@
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks';
 import { PushEvent } from '@octokit/webhooks-types';
-import { sendCommitNotification } from './handler';
-import { getChannelForRepository } from '../db/database';
+import { sendCommitNotification, deleteWebhook } from './handler';
+import { getChannelForRepository, unassignRepository } from '../db/database';
 import { client } from '../index';
 import { EmbedBuilder, TextChannel } from 'discord.js';
 
@@ -31,11 +31,28 @@ function initializeWebhooks() {
 
       const channelId = await getChannelForRepository(repository);
       if (!channelId) {
+        // untrack repo: delete webhook and unassign from db
+        await deleteWebhook(repository);
+        await unassignRepository(repository);
+        console.log(`❌ Untracked repo ${repository} due to missing channel assignment.`);
         return;
       }
 
-      const channel = await client.channels.fetch(channelId) as TextChannel;
-      if (!channel) {
+      let channel;
+      try {
+        channel = await client.channels.fetch(channelId);
+      } catch (err) {
+        // channel fetch failed (likely deleted)
+        await deleteWebhook(repository);
+        await unassignRepository(repository);
+        console.log(`❌ Untracked repo ${repository} due to unknown or deleted channel.`);
+        return;
+      }
+
+      if (!channel || channel.type !== 0) { // 0 = GuildText
+        await deleteWebhook(repository);
+        await unassignRepository(repository);
+        console.log(`❌ Untracked repo ${repository} due to invalid or missing text channel.`);
         return;
       }
 
