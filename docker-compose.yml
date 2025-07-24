@@ -8,5 +8,5 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
-      - ./db:/app/db
+      - ./data:/app/data
     restart: unless-stopped 

@@ -6,7 +6,7 @@ let db: Database;
 export async function initDatabase(): Promise<void> {
   const verboseDb = sqlite3.verbose();
   db = await open({
-    filename: './database.sqlite',
+    filename: './data/database.sqlite',
     driver: verboseDb.Database,
   });
 
