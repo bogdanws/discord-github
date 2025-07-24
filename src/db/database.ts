@@ -33,3 +33,8 @@ export async function getChannelForRepository(repository: string): Promise<strin
   const row = await db.get('SELECT channel_id FROM repository_channels WHERE repository = ?', repository);
   return row?.channel_id;
 }
+
+export async function getAllRepositoryAssignments(): Promise<{ repository: string, channel_id: string }[]> {
+  const rows = await db.all('SELECT repository, channel_id FROM repository_channels');
+  return rows;
+}

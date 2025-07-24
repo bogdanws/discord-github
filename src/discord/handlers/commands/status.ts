@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { getAllRepositoryAssignments } from '../../../db/database';
 
 export default {
 	data: new SlashCommandBuilder()
@@ -9,16 +10,32 @@ export default {
 		const client = interaction.client;
 		const guild = interaction.guild;
 		
-		// get stored channels and roles from client
-		const commitChannel = client.commitChannel;
 		const adminRole = client.adminRole;
-		
+
+		// get all repository assignments
+		const assignments = await getAllRepositoryAssignments();
+		let repoAssignments = 'none';
+		if (assignments.length > 0) {
+			repoAssignments = assignments.map(a => `• \			${a.repository} → <#${a.channel_id}>`).join('\n');
+		}
+
+		// build pretty status message
+		const check = '✅';
+		const cross = '❌';
+		const formatStatus = (ok: boolean) => ok ? `${check}` : `${cross}`;
+
 		const statusMessage = [
 			'📊 **Bot Status:**',
-			`• Guild: ${guild?.name || 'Unknown'}`,
-			`• Commit Channel: ${commitChannel ? `#${commitChannel.name}` : '❌ Not found'}`,
-			`• Admin Role: ${adminRole ? adminRole.name : '❌ Not found'}`,
-			`• GitHub Token: ${process.env.GITHUB_TOKEN ? '✅ Configured' : '❌ Not configured'}`,
+			`• **guild:** ${guild?.name || `${cross} not found`}`,
+			`• **admin role:** ${adminRole ? `${check} ${adminRole.name}` : `${cross} not found`}`,
+			`• **github app id:** ${formatStatus(!!process.env.GITHUB_APP_ID)} configured`,
+			`• **github webhook secret:** ${formatStatus(!!process.env.GITHUB_WEBHOOK_SECRET)} configured`,
+			`• **github token:** ${formatStatus(!!process.env.GITHUB_TOKEN)} configured`,
+			`• **webhook configured:** ${formatStatus(!!process.env.WEBHOOK_DOMAIN && !!process.env.WEBHOOK_PORT)} configured`,
+			'• **repository assignments:**',
+			assignments.length > 0
+				? assignments.map(a => `	${a.repository} → <#${a.channel_id}>`).join('\n')
+				: '\tnone'
 		].join('\n');
 		await interaction.reply(statusMessage);
 	},
