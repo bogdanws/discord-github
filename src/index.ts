@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { handleButtonInteraction } from './discord/handlers/button';
 import { handleModalSubmit } from './discord/handlers/modal';
 import { initDatabase } from './db/database';
+import { startServer } from './server';
 
 // extend the Client type to include commands and custom properties
 declare module 'discord.js' {
@@ -39,7 +40,7 @@ if (missingVars.length > 0) {
 }
 
 // create discord client with required intents
-const client = new Client({
+export const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,           // allows bot to access guild information
     GatewayIntentBits.GuildMessages,    // allows bot to read messages in guilds
@@ -169,6 +170,7 @@ process.on('SIGINT', () => {
     await initDatabase();
     console.log('🚀 Starting discord-github bot...');
     await client.login(process.env.DISCORD_TOKEN);
+    startServer();
   } catch (error) {
     console.error('❌ Failed to start bot:', error);
     process.exit(1);

@@ -8,15 +8,70 @@ import { TextChannel, EmbedBuilder, ColorResolvable, ActionRowBuilder, ButtonBui
 import { Octokit } from 'octokit';
 
 import { getChannelForRepository } from '../db/database.js';
+import { App } from 'octokit';
+import fs from 'fs';
 
-// initialize github client
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-});
+// github app instance (initialized lazily)
+let app: App | null = null;
+
+// initialize github client (called after env vars are loaded)
+function initializeGitHubClient() {
+  if (!app) {
+    app = new App({
+      appId: process.env.GITHUB_APP_ID!,
+      privateKey: process.env.GITHUB_PRIVATE_KEY!,
+      webhooks: {
+        secret: process.env.GITHUB_WEBHOOK_SECRET!,
+      },
+    });
+  }
+  return app;
+}
+
+// get octokit instance for a specific repository
+async function getOctokit(repoFullName: string) {
+  const githubApp = initializeGitHubClient();
+  
+  // get installation ID for this specific repository
+  const [owner, repo] = repoFullName.split('/');
+  
+  try {
+    // automatically get the installation for this repository
+    // this replaces the need for a static GITHUB_INSTALLATION_ID environment variable
+    const installation = await githubApp.octokit.rest.apps.getRepoInstallation({
+      owner,
+      repo
+    });
+    
+    // get octokit instance for this specific installation
+    return await githubApp.getInstallationOctokit(installation.data.id);
+  } catch (error) {
+    console.error(`❌ Error getting installation for ${repoFullName}:`, error);
+    throw new Error(`GitHub App not installed on repository ${repoFullName}`);
+  }
+}
+
+export async function createWebhook(repoFullName: string) {
+  const [owner, repo] = repoFullName.split('/');
+  const octokitInstance = await getOctokit(repoFullName);
+
+  await octokitInstance.request('POST /repos/{owner}/{repo}/hooks', {
+    owner,
+    repo,
+    name: 'web',
+    active: true,
+    events: ['push'],
+    config: {
+      url: `http://${process.env.WEBHOOK_DOMAIN}/webhooks`,
+      content_type: 'json',
+      secret: process.env.GITHUB_WEBHOOK_SECRET!,
+    },
+  });
+}
 
 // send commit notification to discord channel
 export async function sendCommitNotification(
-  client: Client,
+  channel: TextChannel,
   event: PushEvent
 ): Promise<void> {
   try {
@@ -28,18 +83,7 @@ export async function sendCommitNotification(
       return;
     }
 
-    const channelId = await getChannelForRepository(repository.full_name);
-    if (!channelId) {
-      console.log(`⚠️ No channel assigned for repository ${repository.full_name}. Ignoring notification.`);
-      return;
-    }
-
-    const channel = await client.channels.fetch(channelId);
-    if (!channel || !channel.isTextBased()) {
-      console.error(`❌ Could not find a valid text channel with ID ${channelId} for repository ${repository.full_name}.`);
-      return;
-    }
-    const textChannel = channel as TextChannel;
+    const textChannel = channel;
     
     // create embed for commit notification
     const embed = new EmbedBuilder()
@@ -102,7 +146,8 @@ function getCommitColor(commitCount: number): string {
 export async function getRepositoryInfo(repoFullName: string) {
   try {
     const [owner, repo] = repoFullName.split('/');
-    const response = await octokit.rest.repos.get({ owner, repo });
+    const octokitInstance = await getOctokit(repoFullName);
+    const response = await octokitInstance.rest.repos.get({ owner, repo });
     return response.data;
   } catch (error) {
     console.error('❌ Error fetching repository info:', error);
@@ -111,7 +156,7 @@ export async function getRepositoryInfo(repoFullName: string) {
 }
 
 // test function to simulate commit notification
-export async function testCommitNotification(client: Client): Promise<void> {
+export async function testCommitNotification(channel: TextChannel): Promise<void> {
   const testEvent = {
     ref: 'refs/heads/main',
     before: 'abc123',
@@ -149,7 +194,7 @@ export async function testCommitNotification(client: Client): Promise<void> {
     }
   };
 
-  await sendCommitNotification(client, testEvent as PushEvent);
+  await sendCommitNotification(channel, testEvent as PushEvent);
 }
 
 // handle revert button interaction
@@ -160,9 +205,10 @@ export async function handleRevertCommit(
 ): Promise<{ success: boolean; message: string }> {
   try {
     const [owner, repo] = repositoryFullName.split('/');
+    const octokitInstance = await getOctokit(repositoryFullName);
     
     // get commit details
-    const commitResponse = await octokit.rest.repos.getCommit({
+    const commitResponse = await octokitInstance.rest.repos.getCommit({
       owner,
       repo,
       ref: commitId
@@ -170,13 +216,47 @@ export async function handleRevertCommit(
     
     const commit = commitResponse.data;
     
-    // create revert commit
-    const revertResponse = await octokit.rest.repos.createCommit({
+    // get the current head of the main branch
+    const branchResponse = await octokitInstance.rest.repos.getBranch({
+      owner,
+      repo,
+      branch: 'main'
+    });
+    
+    const currentHeadSha = branchResponse.data.commit.sha;
+    
+    // get the parent commit's tree (what we want to revert to)
+    if (!commit.parents || commit.parents.length === 0) {
+      return {
+        success: false,
+        message: '❌ Cannot revert initial commit (no parent commit found)'
+      };
+    }
+    
+    const parentTreeSha = commit.parents[0].sha;
+    
+    // get the parent commit to get its tree
+    const parentCommitResponse = await octokitInstance.rest.repos.getCommit({
+      owner,
+      repo,
+      ref: parentTreeSha
+    });
+    
+    // create revert commit using git API
+    const revertCommit = await octokitInstance.rest.git.createCommit({
       owner,
       repo,
       message: `Revert "${commit.commit.message.split('\n')[0]}"\n\nThis reverts commit ${commitId}.\n\nReverted by Discord user: ${userId}`,
-      tree: commit.parents[0].sha, // revert to parent commit
-      parents: [commit.parents[0].sha]
+      tree: parentCommitResponse.data.commit.tree.sha,
+      parents: [currentHeadSha]
+    });
+    
+    // update the main branch to point to the new revert commit
+    await octokitInstance.rest.git.updateRef({
+      owner,
+      repo,
+      ref: 'heads/main',
+      sha: revertCommit.data.sha
     });
     
     console.log(`✅ Successfully reverted commit ${commitId} in ${repositoryFullName}`);

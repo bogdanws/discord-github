@@ -83,7 +83,7 @@ export default {
 		}
 
 		// acknowledge the interaction immediately
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ ephemeral: false });
 
 		try {
 			const userId = interaction.user.tag;

@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, ChannelType, TextChannel, ChatInputCommandInteraction } from 'discord.js';
 import { assignRepository } from '../../../db/database';
 import { hasAdminPermissions } from '../../../utils';
+import { createWebhook } from '../../../github/handler';
 
 export default {
   data: new SlashCommandBuilder()
@@ -51,8 +52,9 @@ export default {
       }
 
       await assignRepository(repository, channel.id);
+      await createWebhook(repository);
 
-      await interaction.editReply(`Successfully assigned repository \`${repository}\` to channel \`#${channel.name}\`.`);
+      await interaction.editReply(`Successfully assigned repository \`${repository}\` to channel \`#${channel.name}\` and created a webhook.`);
     } catch (error) {
       console.error('Error assigning repository:', error);
       if (interaction.replied || interaction.deferred) {

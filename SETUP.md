@@ -50,21 +50,44 @@ DISCORD_TOKEN=your_discord_bot_token_here
 DISCORD_CLIENT_ID=your_discord_client_id_here
 DISCORD_GUILD_ID=your_discord_server_id_here
 
-# GitHub Configuration
-GITHUB_TOKEN=your_github_personal_access_token_here
+# GitHub App Configuration
+GITHUB_APP_ID=
+GITHUB_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+WEBHOOK_DOMAIN=your-server-ip:3000
 
 # Bot Configuration
 ADMIN_ROLE_ID=your_admin_role_id_here
 ```
 
-### Getting the GitHub Token
+### Creating the GitHub App
 
-1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Click "Generate new token (classic)"
-3. Give it a name and select the following scopes:
-   - `repo` (for private repositories)
-   - `public_repo` (for public repositories)
-4. Copy the generated token
+1.  Go to **GitHub Settings** → **Developer settings** → **GitHub Apps** (https://github.com/settings/apps).
+2.  Click **New GitHub App**.
+3.  Fill in the following details:
+    *   **App name**: A descriptive name for your app (e.g., "Discord Commit Notifier").
+    *   **Homepage URL**: Your bot's website or a placeholder (e.g., `https://discord.com`).
+    *   **Webhook URL**: The URL where your bot will receive webhooks. This should be `http://your-server-ip:3000/webhooks`.
+    *   **Webhook secret**: A strong, random string to secure your webhooks.
+4.  Under **Repository permissions**, grant the following permissions:
+    *   **Contents**: Read & write
+    *   **Metadata**: Read-only
+    *   **Pull requests**: Read & write
+    *   **Webhooks**: Write
+5.  Under **Subscribe to events**, select the **Push** event.
+6.  Click **Create GitHub App**.
+7.  On the app's page, generate a new private key and open the `.pem` file in a text editor. Copy the entire contents and paste it into your `.env` file as the value for `GITHUB_PRIVATE_KEY` (use literal newlines or wrap in double quotes if needed).
+8.  Install the app on the repositories you want to monitor.
+
+### Additional Environment Variables
+
+After creating your GitHub App, add the `WEBHOOK_DOMAIN` environment variable to your `.env` file:
+
+```env
+WEBHOOK_DOMAIN=your-server-ip:3000
+```
+
+This should be the public URL where your bot is running (without `http://`). For local development, you can use `localhost:3000`, but for production you'll need your server's public IP or domain.
 
 ## Step 4: Install Dependencies
 
@@ -109,10 +132,6 @@ Once the bot is running, you should see:
  - `/revert`: Revert a specific commit
  - `/assign`: Assign a repository to a channel
  - `/admin`: Admin-only commands (e.g., test notifications)
- 
- ## Step 8: Set Up GitHub Webhooks (Coming Soon)
-
-The next step will be setting up GitHub webhooks to automatically send commit notifications to your Discord channel.
 
 ## Troubleshooting
 
@@ -128,14 +147,15 @@ The next step will be setting up GitHub webhooks to automatically send commit no
 ### Permission Errors
 - Ensure the bot has the required permissions in your server
 - Check that the admin role ID is correct
-- Verify that the commit channel ID is correct
 
-## Next Steps
-
-1. Set up GitHub webhooks for automatic commit notifications
-2. Add commit revert functionality
-3. Implement webhook signature validation
-4. Add more admin commands and features
+### GitHub App Permission Errors
+If you get "Resource not accessible by integration" when assigning repositories:
+1. Go to your GitHub App settings (https://github.com/settings/apps)
+2. Click on your Discord bot app
+3. Go to "Permissions & events"
+4. Under "Repository permissions", ensure **Webhooks** is set to **Write**
+5. Click "Save changes"
+6. You may need to re-install the app on affected repositories
 
 ## Support
 

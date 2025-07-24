@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from 'discord.js';
 
 import { testCommitNotification } from '../../../github/handler.js';
 import { hasAdminPermissions } from '../../../utils/index.js';
@@ -38,7 +38,7 @@ export default {
 				ephemeral: true
 			});
 			try {
-				await testCommitNotification(interaction.client);
+				await testCommitNotification(interaction.channel as TextChannel);
 				await interaction.followUp({
 					content: '✅ Test commit notification sent successfully! Make sure you have assigned `testuser/test-repo` to a channel.',
 					ephemeral: true
