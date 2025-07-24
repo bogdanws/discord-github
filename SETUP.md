@@ -38,8 +38,7 @@ You'll need to enable Developer Mode in Discord to get the required IDs:
 1. Open Discord and go to User Settings → Advanced
 2. Enable "Developer Mode"
 3. Right-click on your server name and copy the Server ID (this is your `DISCORD_GUILD_ID`)
-4. Right-click on the channel where you want commit notifications and copy the Channel ID (this is your `COMMIT_CHANNEL_ID`)
-5. Go to Server Settings → Roles, right-click on the admin role and copy the Role ID (this is your `ADMIN_ROLE_ID`)
+4. Go to Server Settings → Roles, right-click on the admin role and copy the Role ID (this is your `ADMIN_ROLE_ID`)
 
 ## Step 3: Configure Environment Variables
 
@@ -55,7 +54,6 @@ DISCORD_GUILD_ID=your_discord_server_id_here
 GITHUB_TOKEN=your_github_personal_access_token_here
 
 # Bot Configuration
-COMMIT_CHANNEL_ID=your_commit_channel_id_here
 ADMIN_ROLE_ID=your_admin_role_id_here
 ```
 
@@ -90,20 +88,29 @@ npm run dev
 ## Step 6: Test the Bot
 
 Once the bot is running, you should see:
-- ✅ Bot is online and ready!
-- 🏠 Connected to guild: [Your Server Name]
-- 📝 Commit channel found: #[Channel Name]
-- 👑 Admin role found: [Role Name]
-
-### Available Commands
-
-- `!ping` - Check if bot is responsive
-- `!help` - Show available commands
-- `!status` - Show bot configuration status
-- `!admin` - Admin-only commands (requires admin role)
-- `!test-commit` - Test commit notification (admin only)
-
-## Step 7: Set Up GitHub Webhooks (Coming Soon)
+ - ✅ [Bot Name] is online and ready!
+ - 🏠 Connected to guild: [Your Server Name]
+ - 👑 Admin role found: [Role Name]
+ 
+ ## Step 7: Assign Repositories to Channels
+ 
+ After the bot is running, you must assign your GitHub repositories to specific Discord channels for notifications.
+ 
+ Use the `/assign` command (admin-only) to do this:
+ `/assign repository:owner/repo channel:channel-name`
+ 
+ * If `channel-name` doesn't exist, the bot will create it for you.
+ 
+ ### Available Commands
+ 
+ - `/ping`: Check if bot is responsive
+ - `/help`: Show available commands
+ - `/status`: Show bot configuration status
+ - `/revert`: Revert a specific commit
+ - `/assign`: Assign a repository to a channel
+ - `/admin`: Admin-only commands (e.g., test notifications)
+ 
+ ## Step 8: Set Up GitHub Webhooks (Coming Soon)
 
 The next step will be setting up GitHub webhooks to automatically send commit notifications to your Discord channel.
 
