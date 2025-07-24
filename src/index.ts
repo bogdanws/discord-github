@@ -26,6 +26,7 @@ const requiredEnvVars = {
   DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
   ADMIN_ROLE_ID: process.env.ADMIN_ROLE_ID,
+  APP_URL: process.env.APP_URL,
 };
 
 // check for missing environment variables
