@@ -5,8 +5,8 @@ services:
     container_name: discord-github-bot
     env_file:
       - .env
-    ports:
-      - "3000:3000"
+    expose:
+      - 3000
     volumes:
-      - ./src/db:/app/src/db
+      - ./db:/app/db
     restart: unless-stopped 
