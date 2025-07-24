@@ -6,8 +6,8 @@ const UNBIND_SELECT_ID = 'unbind_select_repo';
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('unbind')
-    .setDescription('Unbind a GitHub repository from commit notifications.'),
+    .setName('unassign')
+    .setDescription('Unassign a GitHub repository from a channel.'),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guild || !interaction.member || !hasAdminPermissions(interaction.member, interaction.client)) {
       return interaction.reply({
