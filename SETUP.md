@@ -55,7 +55,6 @@ GITHUB_APP_ID=                # github app id from your github app settings
 GITHUB_PRIVATE_KEY=           # github app private key (entire .pem contents, use literal newlines or wrap in double quotes)
 GITHUB_WEBHOOK_SECRET=        # github webhook secret for verifying webhook payloads
 WEBHOOK_DOMAIN=               # public url (without http://) where your bot is running (do not include port)
-WEBHOOK_PORT=3000             # port where your bot is running
 
 # Bot Configuration
 ADMIN_ROLE_ID=                # (optional) discord role id for admin commands
@@ -68,7 +67,7 @@ ADMIN_ROLE_ID=                # (optional) discord role id for admin commands
 3.  Fill in the following details:
     *   **App name**: A descriptive name for your app (e.g., "Discord Commit Notifier").
     *   **Homepage URL**: Your bot's website or a placeholder (e.g., `https://discord.com`).
-    *   **Webhook URL**: The URL where your bot will receive webhooks. This should be `http://WEBHOOK_DOMAIN:WEBHOOK_PORT/webhooks` (replace `WEBHOOK_DOMAIN` and `WEBHOOK_PORT` with your actual `WEBHOOK_DOMAIN` and `WEBHOOK_PORT`).
+    *   **Webhook URL**: The URL where your bot will receive webhooks. This should be `http://WEBHOOK_DOMAIN:3000/webhooks` (replace `WEBHOOK_DOMAIN` with your actual `WEBHOOK_DOMAIN`).
     *   **Webhook secret**: A strong, random string to secure your webhooks.
 4.  Under **Repository permissions**, grant the following permissions:
     *   **Contents**: Read & write

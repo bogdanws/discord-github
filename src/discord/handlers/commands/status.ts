@@ -31,7 +31,7 @@ export default {
 			`• **github app id:** ${formatStatus(!!process.env.GITHUB_APP_ID)} configured`,
 			`• **github webhook secret:** ${formatStatus(!!process.env.GITHUB_WEBHOOK_SECRET)} configured`,
 			`• **github token:** ${formatStatus(!!process.env.GITHUB_TOKEN)} configured`,
-			`• **webhook configured:** ${formatStatus(!!process.env.WEBHOOK_DOMAIN && !!process.env.WEBHOOK_PORT)} configured`,
+			`• **webhook configured:** ${formatStatus(!!process.env.WEBHOOK_DOMAIN)} configured`,
 			'• **repository assignments:**',
 			assignments.length > 0
 				? assignments.map(a => `	${a.repository} → <#${a.channel_id}>`).join('\n')

@@ -58,7 +58,7 @@ export async function createWebhook(repoFullName: string) {
     active: true,
     events: ['push'],
     config: {
-      url: `http://${process.env.WEBHOOK_DOMAIN}:${process.env.WEBHOOK_PORT}/webhooks`,
+      url: `http://${process.env.WEBHOOK_DOMAIN}:3000/webhooks`,
       content_type: 'json',
       secret: process.env.GITHUB_WEBHOOK_SECRET!,
     },
@@ -71,7 +71,7 @@ export async function deleteWebhook(repoFullName: string): Promise<boolean> {
     const octokitInstance = await getOctokit(repoFullName);
     // list all webhooks for the repo
     const hooks = await octokitInstance.rest.repos.listWebhooks({ owner, repo });
-    const targetUrl = `http://${process.env.WEBHOOK_DOMAIN}:${process.env.WEBHOOK_PORT}/webhooks`;
+    const targetUrl = `http://${process.env.WEBHOOK_DOMAIN}:3000/webhooks`;
     const hook = hooks.data.find(h => h.config && h.config.url === targetUrl);
     if (!hook) return false;
     await octokitInstance.rest.repos.deleteWebhook({ owner, repo, hook_id: hook.id });
