@@ -5,11 +5,9 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
-    "watch": "tsc --watch",
-    "deploy-commands": "tsx src/deploy-commands.ts",
+    "deploy-commands": "tsx src/discord/deploy-commands.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
@@ -33,9 +31,12 @@
   },
   "homepage": "https://github.com/bogdanws/discord-github#readme",
   "dependencies": {
+    "@types/sqlite3": "^3.1.11",
     "discord.js": "^14.21.0",
     "dotenv": "^17.2.0",
-    "octokit": "^5.0.3"
+    "octokit": "^5.0.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

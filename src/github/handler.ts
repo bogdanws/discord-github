@@ -4,8 +4,10 @@
 // - revert button for each commit (admin only)
 // - github api integration for commit operations
 import { PushEvent } from '@octokit/webhooks-types';
-import { TextChannel, EmbedBuilder, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { TextChannel, EmbedBuilder, ColorResolvable, ActionRowBuilder, ButtonBuilder, ButtonStyle, Client } from 'discord.js';
 import { Octokit } from 'octokit';
+
+import { getChannelForRepository } from '../db/database.js';
 
 // initialize github client
 const octokit = new Octokit({
@@ -14,7 +16,7 @@ const octokit = new Octokit({
 
 // send commit notification to discord channel
 export async function sendCommitNotification(
-  channel: TextChannel,
+  client: Client,
   event: PushEvent
 ): Promise<void> {
   try {
@@ -25,6 +27,19 @@ export async function sendCommitNotification(
       console.log('⚠️ Received a push event without a head_commit, likely a branch deletion. Ignoring.');
       return;
     }
+
+    const channelId = await getChannelForRepository(repository.full_name);
+    if (!channelId) {
+      console.log(`⚠️ No channel assigned for repository ${repository.full_name}. Ignoring notification.`);
+      return;
+    }
+
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !channel.isTextBased()) {
+      console.error(`❌ Could not find a valid text channel with ID ${channelId} for repository ${repository.full_name}.`);
+      return;
+    }
+    const textChannel = channel as TextChannel;
     
     // create embed for commit notification
     const embed = new EmbedBuilder()
@@ -67,8 +82,8 @@ export async function sendCommitNotification(
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(revertButton);
 
-    await channel.send({ embeds: [embed], components: [row] });
-    console.log(`✅ Sent commit notification for ${repository.name}`);
+    await textChannel.send({ embeds: [embed], components: [row] });
+    console.log(`✅ Sent commit notification for ${repository.name} to #${textChannel.name}`);
     
   } catch (error) {
     console.error('❌ Error sending commit notification:', error);
@@ -96,7 +111,7 @@ export async function getRepositoryInfo(repoFullName: string) {
 }
 
 // test function to simulate commit notification
-export async function testCommitNotification(channel: TextChannel): Promise<void> {
+export async function testCommitNotification(client: Client): Promise<void> {
   const testEvent = {
     ref: 'refs/heads/main',
     before: 'abc123',
@@ -134,7 +149,7 @@ export async function testCommitNotification(channel: TextChannel): Promise<void
     }
   };
 
-  await sendCommitNotification(channel, testEvent as PushEvent);
+  await sendCommitNotification(client, testEvent as PushEvent);
 }
 
 // handle revert button interaction

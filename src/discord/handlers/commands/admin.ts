@@ -33,22 +33,14 @@ export default {
 				ephemeral: true
 			});
 		} else if (subcommand === 'test-commit') {
-			const client = interaction.client;
-			const commitChannel = client.commitChannel;
-
-			if (!commitChannel) {
-				await interaction.reply('❌ Commit channel not configured. Please check your environment variables.');
-				return;
-			}
-
 			await interaction.reply({
-				content: '🧪 Testing commit notification...',
+				content: '🧪 Testing commit notification for repository `testuser/test-repo`...',
 				ephemeral: true
 			});
 			try {
-				await testCommitNotification(commitChannel);
+				await testCommitNotification(interaction.client);
 				await interaction.followUp({
-					content: '✅ Test commit notification sent successfully!',
+					content: '✅ Test commit notification sent successfully! Make sure you have assigned `testuser/test-repo` to a channel.',
 					ephemeral: true
 				});
 			} catch (error) {

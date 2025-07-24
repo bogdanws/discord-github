@@ -4,8 +4,9 @@ import dotenv from 'dotenv';
 import { readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { handleButtonInteraction } from './discord/handlers/button.js';
-import { handleModalSubmit } from './discord/handlers/modal.js';
+import { handleButtonInteraction } from './discord/handlers/button';
+import { handleModalSubmit } from './discord/handlers/modal';
+import { initDatabase } from './db/database';
 
 // extend the Client type to include commands and custom properties
 declare module 'discord.js' {
@@ -24,7 +25,6 @@ const requiredEnvVars = {
   DISCORD_TOKEN: process.env.DISCORD_TOKEN,
   DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
-  COMMIT_CHANNEL_ID: process.env.COMMIT_CHANNEL_ID,
   ADMIN_ROLE_ID: process.env.ADMIN_ROLE_ID,
 };
 
@@ -55,7 +55,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // load commands
-const commandsPath = join(__dirname, 'commands');
+const commandsPath = join(__dirname, 'discord/handlers/commands');
 const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 
 for (const file of commandFiles) {
@@ -81,15 +81,6 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
   
   console.log(`🏠 Connected to guild: ${guild.name}`);
-  
-  // get the commit notification channel
-  const channel = guild.channels.cache.get(process.env.COMMIT_CHANNEL_ID!) as TextChannel;
-  if (channel) {
-    client.commitChannel = channel;
-    console.log(`📝 Commit channel found: #${channel.name}`);
-  } else {
-    console.warn('⚠️ Commit channel not found - commit notifications will be disabled');
-  }
   
   // get the admin role
   const role = guild.roles.cache.get(process.env.ADMIN_ROLE_ID!);
@@ -172,5 +163,14 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-console.log('🚀 Starting discord-github bot...');
-client.login(process.env.DISCORD_TOKEN); 
+(async () => {
+  try {
+    console.log('🚀 Initializing database...');
+    await initDatabase();
+    console.log('🚀 Starting discord-github bot...');
+    await client.login(process.env.DISCORD_TOKEN);
+  } catch (error) {
+    console.error('❌ Failed to start bot:', error);
+    process.exit(1);
+  }
+})();
