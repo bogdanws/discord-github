@@ -116,17 +116,19 @@ export async function sendCommitNotification(
       });
     }
 
-    // create revert button
-    const revertButton = new ButtonBuilder()
-      .setCustomId(`revert_prompt_${repository.full_name}_${head_commit.id}`)
-      .setLabel('🔄 Revert')
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji('⚠️');
-
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(revertButton);
-
-    await textChannel.send({ embeds: [embed], components: [row] });
+    // create revert dropdown (string select menu)
+    const { StringSelectMenuBuilder } = await import('discord.js');
+    const options = commits.slice(0, 5).map(commit => ({
+      label: commit.message.split('\n')[0].slice(0, 80) || 'No message',
+      description: `by ${commit.author.name} • ${commit.id.substring(0, 7)}`,
+      value: commit.id
+    }));
+    const revertDropdown = new StringSelectMenuBuilder()
+      .setCustomId(`revert_select_${repository.full_name}`)
+      .setPlaceholder('Select a commit to revert')
+      .addOptions(options);
+    const row = new ActionRowBuilder().addComponents(revertDropdown);
+    await textChannel.send({ embeds: [embed], components: [row.toJSON()] });
     console.log(`✅ Sent commit notification for ${repository.name} to #${textChannel.name}`);
     
   } catch (error) {

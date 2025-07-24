@@ -135,6 +135,23 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
+// handle select menu interactions
+client.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isStringSelectMenu()) return;
+
+	try {
+		await handleButtonInteraction(interaction);
+	} catch (error) {
+		console.error('❌ Error handling select menu interaction:', error);
+
+		if (interaction.deferred) {
+			await interaction.editReply({ content: 'There was an error while processing this action!' });
+		} else {
+			await interaction.reply({ content: 'There was an error while processing this action!', ephemeral: true });
+		}
+	}
+});
+
 // handle modal submissions
 client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isModalSubmit()) return;

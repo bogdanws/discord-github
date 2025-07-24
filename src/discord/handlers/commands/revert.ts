@@ -28,39 +28,16 @@ export default {
 		const commitHash = interaction.options.getString('commit_hash');
 		const repository = interaction.options.getString('repository');
 
-		// if both parameters are provided, execute the revert directly
+		// only allow direct revert if both parameters are provided
 		if (commitHash && repository) {
 			await this.executeRevert(interaction, commitHash, repository);
 			return;
 		}
 
-		// if parameters are missing, show a modal for user input
-		const modal = new ModalBuilder()
-			.setCustomId('revert_modal')
-			.setTitle('Revert Commit');
-
-		const commitHashInput = new TextInputBuilder()
-			.setCustomId('commit_hash_input')
-			.setLabel('Commit Hash')
-			.setStyle(TextInputStyle.Short)
-			.setPlaceholder('Enter the commit hash to revert (e.g., abc1234)')
-			.setRequired(true)
-			.setValue(commitHash || '');
-
-		const repositoryInput = new TextInputBuilder()
-			.setCustomId('repository_input')
-			.setLabel('Repository')
-			.setStyle(TextInputStyle.Short)
-			.setPlaceholder('Enter repository in format owner/repo')
-			.setRequired(true)
-			.setValue(repository || process.env.DEFAULT_REPOSITORY || '');
-
-		const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(commitHashInput);
-		const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(repositoryInput);
-
-		modal.addComponents(firstActionRow, secondActionRow);
-
-		await interaction.showModal(modal);
+		await interaction.reply({
+			content: '❌ You must provide both a commit hash and a repository to use this command. Use the dropdown in commit notifications for interactive revert.',
+			ephemeral: true
+		});
 	},
 
 	// separate method to execute the actual revert
