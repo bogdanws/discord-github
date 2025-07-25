@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { getAllRepositoryAssignments } from '../../../db/database';
 
 export default {
@@ -14,29 +14,80 @@ export default {
 
 		// get all repository assignments
 		const assignments = await getAllRepositoryAssignments();
-		let repoAssignments = 'none';
-		if (assignments.length > 0) {
-			repoAssignments = assignments.map(a => `• \			${a.repository} → <#${a.channel_id}>`).join('\n');
-		}
 
-		// build pretty status message
+		// status indicators
 		const check = '✅';
 		const cross = '❌';
-		const formatStatus = (ok: boolean) => ok ? `${check}` : `${cross}`;
+		const formatStatus = (ok: boolean, label: string) =>
+			ok ? `${check} ${label}` : `${cross} ${label}`;
 
-		const statusMessage = [
-			'📊 **Bot Status:**',
-			`• **guild:** ${guild?.name || `${cross} not found`}`,
-			`• **admin role:** ${adminRole ? `${check} ${adminRole.name}` : `${cross} not found`}`,
-			`• **github app id:** ${formatStatus(!!process.env.GITHUB_APP_ID)} configured`,
-			`• **github webhook secret:** ${formatStatus(!!process.env.GITHUB_WEBHOOK_SECRET)} configured`,
-			`• **github token:** ${formatStatus(!!process.env.GITHUB_TOKEN)} configured`,
-			`• **webhook configured:** ${formatStatus(!!process.env.WEBHOOK_DOMAIN)} configured`,
-			'• **repository assignments:**',
-			assignments.length > 0
-				? assignments.map(a => `	${a.repository} → <#${a.channel_id}>`).join('\n')
-				: '\tnone'
-		].join('\n');
-		await interaction.reply(statusMessage);
+		// check if all critical components are configured
+		const criticalChecks = [
+			!!guild,
+			!!adminRole,
+			!!process.env.GITHUB_APP_ID,
+			!!process.env.GITHUB_PRIVATE_KEY,
+			!!process.env.GITHUB_WEBHOOK_SECRET
+		];
+		const allHealthy = criticalChecks.every(check => check);
+
+		// create embed
+		const embed = new EmbedBuilder()
+			.setTitle('🤖 Bot Status & Configuration')
+			.setColor(allHealthy ? 0x00ff00 : 0xff6b00) // green if healthy, orange if issues
+			.setTimestamp();
+
+		// discord configuration
+		embed.addFields({
+			name: '🔧 Discord Configuration',
+			value: [
+				`**Guild:** ${guild?.name || `${cross} Not found`}`,
+				`**Admin Role:** ${adminRole ? `${check} ${adminRole.name}` : `${cross} Not configured`}`
+			].join('\n'),
+			inline: false
+		});
+
+		// github configuration
+		embed.addFields({
+			name: '🐙 GitHub Configuration',
+			value: [
+				formatStatus(!!process.env.GITHUB_APP_ID, 'App ID'),
+				formatStatus(!!process.env.GITHUB_PRIVATE_KEY, 'Private Key'),
+				formatStatus(!!process.env.GITHUB_WEBHOOK_SECRET, 'Webhook Secret')
+			].join('\n'),
+			inline: true
+		});
+
+		// webhook configuration
+		embed.addFields({
+			name: '🌐 Webhook Configuration',
+			value: formatStatus(!!process.env.APP_URL, 'Webhook URL'),
+			inline: true
+		});
+
+		// repository assignments
+		let repoValue = 'No repositories assigned';
+		if (assignments.length > 0) {
+			if (assignments.length <= 10) {
+				repoValue = assignments.map(a => `• ${a.repository} → <#${a.channel_id}>`).join('\n');
+			} else {
+				// if too many assignments, show count and first few
+				const firstFew = assignments.slice(0, 8).map(a => `• ${a.repository} → <#${a.channel_id}>`).join('\n');
+				repoValue = `${firstFew}\n... and ${assignments.length - 8} more`;
+			}
+		}
+
+		embed.addFields({
+			name: `📚 Repository Assignments (${assignments.length})`,
+			value: repoValue,
+			inline: false
+		});
+
+		// add footer with additional info
+		embed.setFooter({
+			text: `Bot uptime: ${Math.floor(client.uptime! / 1000 / 60)} minutes`
+		});
+
+		await interaction.reply({ embeds: [embed] });
 	},
-}; 
+};
