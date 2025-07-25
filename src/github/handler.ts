@@ -88,7 +88,7 @@ export async function sendCommitNotification(
   event: PushEvent
 ): Promise<void> {
   try {
-    const { repository, commits, head_commit, pusher } = event;
+    const { repository, commits, head_commit, pusher, ref } = event;
 
     // A push event with no head_commit indicates a branch deletion
     if (!head_commit) {
@@ -97,32 +97,70 @@ export async function sendCommitNotification(
     }
 
     const textChannel = channel;
-    
+
+    // extract branch name from ref (e.g., refs/heads/main)
+    const branchName = ref?.replace(/^refs\/heads\//, '') || 'unknown';
+
+    // determine if all commits are by the same author (by name and username if present)
+    const firstAuthor = commits[0].author;
+    const firstUsername = (commits[0].author as any).username;
+    const allSameAuthor = commits.every(commit => {
+      const username = (commit.author as any).username;
+      return (
+        commit.author.name === firstAuthor.name &&
+        (username === firstUsername || (!username && !firstUsername))
+      );
+    });
+
+    // get avatar url if possible
+    let avatarUrl: string | undefined = undefined;
+    if (allSameAuthor && firstUsername) {
+      avatarUrl = `https://github.com/${firstUsername}.png`;
+    }
+
     // create embed for commit notification
     const embed = new EmbedBuilder()
       .setTitle(`📝 New commits pushed to ${repository.name}`)
-      .setDescription(`**${commits.length} commit${commits.length > 1 ? 's' : ''}** by **${pusher.name}**`)
       .setColor(getCommitColor(commits.length) as ColorResolvable)
       .setURL(repository.html_url)
       .setTimestamp(new Date(head_commit.timestamp))
-      .setFooter({ text: `Repository: ${repository.full_name}` });
+      .setFooter({ text: `Repository: ${repository.full_name}` })
+      .addFields({ name: 'Branch', value: branchName, inline: true });
 
-    // add commit details
+    // set author at top if all commits are by the same author
+    if (allSameAuthor) {
+      if (avatarUrl) {
+        embed.setAuthor({ name: firstAuthor.name, iconURL: avatarUrl });
+      } else {
+        embed.setAuthor({ name: firstAuthor.name });
+      }
+    }
+
+    // description
     if (commits.length === 1) {
-      // single commit - show full details
+      // single commit - show full details, no redundant author
       const commit = commits[0];
+      embed.setDescription(`1 commit to **${branchName}**`);
       embed.addFields(
         { name: 'Commit Message', value: commit.message.split('\n')[0] || 'No message' },
-        { name: 'Commit Hash', value: `\`${commit.id.substring(0, 7)}\``, inline: true },
-        { name: 'Author', value: commit.author.name, inline: true }
+        { name: 'Commit Hash', value: `[\`${commit.id.substring(0, 7)}\`](${commit.url})`, inline: true }
       );
     } else {
-      // multiple commits - show summary
+      // multiple commits
+      if (allSameAuthor) {
+        embed.setDescription(`**${commits.length} commit${commits.length > 1 ? 's' : ''}** to **${branchName}**`);
+      } else {
+        embed.setDescription(`**${commits.length} commit${commits.length > 1 ? 's' : ''}** to **${branchName}** by multiple authors`);
+      }
+      // show up to 5 commits, with author if multiple authors
       const commitMessages = commits
-        .slice(0, 5) // show first 5 commits
-        .map(commit => `• \`${commit.id.substring(0, 7)}\` ${commit.message.split('\n')[0]}`)
+        .slice(0, 5)
+        .map(commit => {
+          const username = (commit.author as any).username;
+          const authorDisplay = allSameAuthor ? '' : ` _(by ${commit.author.name})_`;
+          return `• [\`${commit.id.substring(0, 7)}\`](${commit.url}) ${commit.message.split('\n')[0]}${authorDisplay}`;
+        })
         .join('\n');
-      
       embed.addFields({
         name: `Recent Commits (${commits.length} total)`,
         value: commitMessages + (commits.length > 5 ? '\n...' : '')
@@ -143,7 +181,7 @@ export async function sendCommitNotification(
     const row = new ActionRowBuilder().addComponents(revertDropdown);
     await textChannel.send({ embeds: [embed], components: [row.toJSON()] });
     console.log(`✅ Sent commit notification for ${repository.name} to #${textChannel.name}`);
-    
+
   } catch (error) {
     console.error('❌ Error sending commit notification:', error);
   }
