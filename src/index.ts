@@ -8,6 +8,7 @@ import { handleButtonInteraction } from './discord/handlers/button';
 import { handleModalSubmit } from './discord/handlers/modal';
 import { initDatabase } from './db/database';
 import { startServer } from './server';
+import { deployCommands } from './discord/deploy-commands';
 
 // extend the Client type to include commands and custom properties
 declare module 'discord.js' {
@@ -185,6 +186,8 @@ process.on('SIGINT', () => {
   try {
     console.log('🚀 Initializing database...');
     await initDatabase();
+    // auto-deploy slash commands on startup
+    await deployCommands();
     console.log('🚀 Starting discord-github bot...');
     await client.login(process.env.DISCORD_TOKEN);
     startServer();
